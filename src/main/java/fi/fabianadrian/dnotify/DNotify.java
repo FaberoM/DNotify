@@ -2,6 +2,8 @@ package fi.fabianadrian.dnotify;
 
 import co.aikar.commands.PaperCommandManager;
 import fi.fabianadrian.dnotify.Commands.CmdDNotify;
+import fi.fabianadrian.dnotify.Files.Log;
+import fi.fabianadrian.dnotify.Files.PlayerData;
 import org.bukkit.ChatColor;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -12,10 +14,7 @@ public class DNotify extends JavaPlugin {
 
     public static String translate(final String string) {
 
-        if (string == null) {
-            return "";
-        }
-        return ChatColor.translateAlternateColorCodes('&', string);
+        return string == null ? "" : ChatColor.translateAlternateColorCodes('&', string);
     }
 
     public static DNotify getPlugin() {
@@ -35,11 +34,16 @@ public class DNotify extends JavaPlugin {
     public void onEnable() {
         plugin = this;
 
-        registerCommands();
-
-        getServer().getPluginManager().registerEvents(new PlayerEvent(), this);
+        saveDefaultConfig();
 
         PlayerData.setup();
+        registerCommands();
+
+        if (getConfig().getBoolean("logger")) {
+            Log.setup();
+        }
+
+        getServer().getPluginManager().registerEvents(new PlayerEvent(), this);
     }
 
     public void onDisable() {

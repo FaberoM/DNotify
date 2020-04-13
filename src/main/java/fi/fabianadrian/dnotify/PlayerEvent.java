@@ -1,10 +1,17 @@
 package fi.fabianadrian.dnotify;
 
+import fi.fabianadrian.dnotify.Files.Log;
+import fi.fabianadrian.dnotify.Files.PlayerData;
+import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.chat.ComponentBuilder;
+import net.md_5.bungee.api.chat.HoverEvent;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.configuration.Configuration;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -22,8 +29,9 @@ import java.util.concurrent.TimeUnit;
 
 public class PlayerEvent implements Listener {
 
-    private Map<UUID, Location> lastFindLocation = new HashMap<>();
-    private Map<UUID, HashMap<String, Object>> findHistory = new HashMap<>();
+    private final Map<UUID, Location> lastFindLocation = new HashMap<>();
+    private final Map<UUID, HashMap<String, Object>> findHistory = new HashMap<>();
+    private final Configuration config = DNotify.getPlugin().getConfig();
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onBlockBreak(BlockBreakEvent event) {
@@ -34,7 +42,6 @@ public class PlayerEvent implements Listener {
             Player player = event.getPlayer();
 
             int searchRadius = 3;
-
             if (!lastFindLocation.containsKey(player.getUniqueId()) || block.getLocation().distance(lastFindLocation.get(player.getUniqueId())) > searchRadius) {
 
                 //Count how many diamonds there are around.
@@ -49,74 +56,96 @@ public class PlayerEvent implements Listener {
                     }
                 }
 
-                long systemTime = System.currentTimeMillis();
-
                 //Calculate find rate
-                HashMap<String, Object> tempMap;
+                HashMap<String, Object> tempFindMap;
                 if (!findHistory.containsKey(player.getUniqueId())) {
-                    tempMap = new HashMap<>();
+                    tempFindMap = new HashMap<>();
                 } else {
-                    tempMap = findHistory.get(player.getUniqueId());
+                    tempFindMap = findHistory.get(player.getUniqueId());
                 }
 
-                tempMap.put(String.valueOf(systemTime), diamondCount);
+                long systemTime = System.currentTimeMillis();
+                tempFindMap.put(String.valueOf(systemTime), diamondCount);
 
-                int foundPerQuarterHour = 0;
+                tempFindMap.keySet().removeIf(e -> Long.parseLong(e) < (systemTime - TimeUnit.MINUTES.toMillis(10)));
 
-                for (String key : tempMap.keySet()) {
-                    if (Long.parseLong(key) < (systemTime - TimeUnit.MINUTES.toMillis(15))) {
-                        tempMap.remove(key);
-                    } else {
-                        foundPerQuarterHour += (int) tempMap.get(key);
-                    }
-                }
+                int totalFindAmount = tempFindMap.keySet().size();
+                findHistory.put(player.getUniqueId(), tempFindMap);
 
-                double foundPerMinute = foundPerQuarterHour / 15.0;
+                double foundRate = totalFindAmount / 10.0;
 
                 DecimalFormat decimalFormat = new DecimalFormat("0.00");
+                ComponentBuilder messageComponent = new ComponentBuilder(player.getName());
 
-                for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-                    if (onlinePlayer.hasPermission("dnotify.notify") && !PlayerData.getData(player).getBoolean("disable-notifications")) {
-                        //TODO - Convert this to use acf's language API?
+                double suspiciousThreshold = config.getDouble("suspicious-threshold");
+                if (foundRate < suspiciousThreshold) {
+                    messageComponent.color(ChatColor.BLUE)
+                            .append(" found " + diamondCount + " diamonds ").color(ChatColor.WHITE);
 
-                        //TODO - Add click to teleport option.
-                        onlinePlayer.sendMessage(DNotify.translate("&9" + player.getName() + "&f found " + diamondCount + " diamonds &7(" + decimalFormat.format(foundPerMinute) + "/min)"));
+                    if (config.getBoolean("logger")) {
+                        Log.write(player.getName() + " found " + diamondCount + " diamonds at (" + block.getX() + ", " + block.getY() + ", " + block.getZ() + ")");
+                    }
+                } else {
+                    messageComponent.color(ChatColor.GOLD)
+                            .append(" is finding diamonds at a suspicious rate! ").color(ChatColor.YELLOW);
+
+                    if (config.getBoolean("logger")) {
+                        Log.write(player.getName() + "is finding diamonds at a suspicious rate!");
                     }
                 }
 
-                lastFindLocation.put(player.getUniqueId(), block.getLocation());
-                findHistory.put(player.getUniqueId(), tempMap);
+                messageComponent.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("At " + block.getX() + " " + block.getY() + " " + block.getZ())));
+
+                TextComponent findRateComponent = new TextComponent("(" + decimalFormat.format(foundRate) + "/min)");
+                findRateComponent.setColor(ChatColor.GRAY);
+
+                //Notify players that have permission and has notifications on
+                TextComponent finalMessage = new TextComponent(messageComponent.create());
+                for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+                    if (onlinePlayer.hasPermission("dnotify.notify") && !PlayerData.get(onlinePlayer).getBoolean("disable-notifications")) {
+                        onlinePlayer.spigot().sendMessage(finalMessage, findRateComponent);
+                    }
+                }
+
+                //Execute a command if specified in config.
+                String command = config.getString("suspicious-command");
+                if (command != null && !command.equalsIgnoreCase("")) {
+                    command = command.replace("%player%", player.getName());
+                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
+                }
             }
+
+            lastFindLocation.put(player.getUniqueId(), block.getLocation());
         }
     }
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
-        Player player = event.getPlayer();
+        UUID uuid = event.getPlayer().getUniqueId();
 
-        if (lastFindLocation.containsKey(player.getUniqueId())) {
-            PlayerData.setValue(player, "find-location", lastFindLocation.get(player.getUniqueId()));
+        if (lastFindLocation.containsKey(uuid)) {
+            PlayerData.set(uuid, "find-location", lastFindLocation.get(uuid));
         }
-        if (findHistory.containsKey(player.getUniqueId())) {
-            PlayerData.setValue(player, "find-history", findHistory.get(player.getUniqueId()));
+        if (findHistory.containsKey(uuid)) {
+            PlayerData.set(uuid, "find-history", findHistory.get(uuid));
         }
 
-        lastFindLocation.remove(player.getUniqueId());
-        findHistory.remove(player.getUniqueId());
+        lastFindLocation.remove(uuid);
+        findHistory.remove(uuid);
     }
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
-        Player player = event.getPlayer();
+        UUID uuid = event.getPlayer().getUniqueId();
 
-        Location location = (Location) PlayerData.getData(player).get("find-location");
+        Location location = (Location) PlayerData.get(uuid).get("find-location");
         if (location != null) {
-            lastFindLocation.put(player.getUniqueId(), location);
+            lastFindLocation.put(uuid, location);
         }
 
-        ConfigurationSection historySection = PlayerData.getData(player).getConfigurationSection("find-history");
+        ConfigurationSection historySection = PlayerData.get(uuid).getConfigurationSection("find-history");
         if (historySection != null) {
-            findHistory.put(player.getUniqueId(), (HashMap<String, Object>) historySection.getValues(false));
+            findHistory.put(uuid, (HashMap<String, Object>) historySection.getValues(false));
         }
     }
 }

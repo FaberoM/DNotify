@@ -1,5 +1,8 @@
 main: fi.fabianadrian.dnotify.DNotify
-version: 0.0.1
+version: 0.0.4
 name: DNotify
 author: Fabian Adrian
 api-version: "1.13"
+permissions:
+  dnotify.notify:
+    description: Allows receiving diamond notifications

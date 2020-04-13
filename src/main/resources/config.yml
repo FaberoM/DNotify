@@ -1,1 +1,9 @@
-threshold:
+# Threshold when a diamond find rate is considered as suspicious.
+suspicious-threshold: 0.8
+
+# Executes a command if someone is acting suspicious. Set to "" to disable, do not include the "/" character.
+# Available placeholders: %player%
+suspicious-command: "say this is a debug command and the player name is %player%."
+
+# Should diamond finds be logged into a seperate file as well?
+logger: true
