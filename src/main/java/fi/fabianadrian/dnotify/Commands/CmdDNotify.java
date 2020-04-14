@@ -21,7 +21,12 @@ public class CmdDNotify extends BaseCommand {
 
     @HelpCommand
     public void onDefault(CommandIssuer issuer) {
-        issuer.sendInfo(MessageKey.of("missingArguments"));
+        StringBuilder sb = new StringBuilder();
+        sb.append("&6Available commands:").append("\n")
+                .append("&f/dnotify version").append("\n")
+                .append("&f/dnotify toggle").append("\n")
+                .append("&f/dnotify reload");
+        issuer.sendMessage(DNotify.translate(sb.toString()));
     }
 
     @Subcommand("version")
@@ -39,9 +44,9 @@ public class CmdDNotify extends BaseCommand {
         PlayerData.set(player, "disable-notifications", disableNotif);
 
         if (disableNotif) {
-            issuer.sendInfo(MessageKey.of("notificationsEnabled"));
-        } else {
             issuer.sendInfo(MessageKey.of("notificationsDisabled"));
+        } else {
+            issuer.sendInfo(MessageKey.of("notificationsEnabled"));
         }
     }
 

@@ -3,7 +3,8 @@ suspicious-threshold: 0.8
 
 # Executes a command if someone is acting suspicious. Set to "" to disable, do not include the "/" character.
 # Available placeholders: %player%
-suspicious-command: "say this is a debug command and the player name is %player%."
+# Example: "say This is an example command!"
+suspicious-command: ""
 
-# Should diamond finds be logged into a seperate file as well?
+# Should diamond finds be logged into a separate file as well?
 logger: true

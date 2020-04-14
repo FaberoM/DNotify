@@ -12,13 +12,12 @@ import java.util.UUID;
 
 public class PlayerData {
 
-    private static File playerDataFolder;
+    private static final File dataFolder = new File(DNotify.getPlugin().getDataFolder(), "PlayerData");
 
     public static void setup() {
         //Create a folder for playerdata if it doesn't exist.
-        playerDataFolder = new File(DNotify.getPlugin().getDataFolder(), "Data/PlayerData");
-        if (!playerDataFolder.exists()) {
-            playerDataFolder.mkdirs();
+        if (!dataFolder.exists()) {
+            dataFolder.mkdirs();
         }
     }
 
@@ -40,18 +39,18 @@ public class PlayerData {
         try {
             file.save(dataFile(uuid));
         } catch (IOException e) {
-            Bukkit.getLogger().severe("Couldn't create PlayerData.yml for player " + uuid);
+            Bukkit.getLogger().severe("Couldn't save playerdata for player " + uuid);
         }
     }
 
     private static File dataFile(UUID uuid) {
-        File file = new File(playerDataFolder, uuid + ".yml");
+        File file = new File(dataFolder, uuid + ".yml");
 
         if (!file.exists()) {
             try {
                 file.createNewFile();
             } catch (IOException e) {
-                Bukkit.getLogger().severe("Couldn't save playerdata for " + uuid);
+                Bukkit.getLogger().severe("Couldn't create playerdata for " + uuid);
             }
         }
 

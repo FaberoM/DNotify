@@ -1,6 +1,6 @@
 package fi.fabianadrian.dnotify;
 
-import fi.fabianadrian.dnotify.Files.Log;
+import fi.fabianadrian.dnotify.Files.Logger;
 import fi.fabianadrian.dnotify.Files.PlayerData;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.ComponentBuilder;
@@ -36,19 +36,19 @@ public class PlayerEvent implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onBlockBreak(BlockBreakEvent event) {
 
-        if (event.getBlock().getType() == Material.DIAMOND_ORE && event.getPlayer().getGameMode() == GameMode.SURVIVAL && event.getBlock().getLocation().getBlockY() < 17) {
+        if (event.getBlock().getType() == Material.DIAMOND_ORE && event.getPlayer().getGameMode() == GameMode.SURVIVAL && event.getBlock().getY() < 17) {
 
             Block block = event.getBlock();
             Player player = event.getPlayer();
 
-            int searchRadius = 3;
-            if (!lastFindLocation.containsKey(player.getUniqueId()) || block.getLocation().distance(lastFindLocation.get(player.getUniqueId())) > searchRadius) {
+            int SEARCH_RADIUS = 3;
+            if (!lastFindLocation.containsKey(player.getUniqueId()) || block.getLocation().distance(lastFindLocation.get(player.getUniqueId())) > SEARCH_RADIUS) {
 
                 //Count how many diamonds there are around.
                 int diamondCount = 1;
-                for (int x = -searchRadius; x <= searchRadius; x++) {
-                    for (int y = -searchRadius; y <= searchRadius; y++) {
-                        for (int z = -searchRadius; z <= searchRadius; z++) {
+                for (int x = -SEARCH_RADIUS; x <= SEARCH_RADIUS; x++) {
+                    for (int y = -SEARCH_RADIUS; y <= SEARCH_RADIUS; y++) {
+                        for (int z = -SEARCH_RADIUS; z <= SEARCH_RADIUS; z++) {
                             if (block.getRelative(x, y, z).getType() == Material.DIAMOND_ORE && (x != 0 || y != 0 || z != 0)) {
                                 diamondCount++;
                             }
@@ -72,38 +72,27 @@ public class PlayerEvent implements Listener {
                 int totalFindAmount = tempFindMap.keySet().size();
                 findHistory.put(player.getUniqueId(), tempFindMap);
 
-                double foundRate = totalFindAmount / 10.0;
+                double findRate = totalFindAmount / 10.0;
 
+                //Create message component
                 DecimalFormat decimalFormat = new DecimalFormat("0.00");
-                ComponentBuilder messageComponent = new ComponentBuilder(player.getName());
+                ComponentBuilder message = new ComponentBuilder(player.getName());
 
                 double suspiciousThreshold = config.getDouble("suspicious-threshold");
-                if (foundRate < suspiciousThreshold) {
-                    messageComponent.color(ChatColor.BLUE)
-                            .append(" found " + diamondCount + " diamonds ").color(ChatColor.WHITE);
-
-                    if (config.getBoolean("logger")) {
-                        Log.write(player.getName() + " found " + diamondCount + " diamonds at (" + block.getX() + ", " + block.getY() + ", " + block.getZ() + ")");
-                    }
+                if (findRate < suspiciousThreshold) {
+                    message.color(ChatColor.BLUE)
+                            .append(" found " + diamondCount + " diamonds").color(ChatColor.WHITE);
                 } else {
-                    messageComponent.color(ChatColor.GOLD)
-                            .append(" is finding diamonds at a suspicious rate! ").color(ChatColor.YELLOW);
-
-                    if (config.getBoolean("logger")) {
-                        Log.write(player.getName() + "is finding diamonds at a suspicious rate!");
-                    }
+                    message.color(ChatColor.GOLD)
+                            .append(" is finding diamonds at a suspicious rate!").color(ChatColor.YELLOW);
                 }
-
-                messageComponent.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("At " + block.getX() + " " + block.getY() + " " + block.getZ())));
-
-                TextComponent findRateComponent = new TextComponent("(" + decimalFormat.format(foundRate) + "/min)");
-                findRateComponent.setColor(ChatColor.GRAY);
+                message.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText(block.getX() + " " + block.getY() + " " + block.getZ())));
+                message.append(" (" + decimalFormat.format(findRate) + "/min)").color(ChatColor.GRAY);
 
                 //Notify players that have permission and has notifications on
-                TextComponent finalMessage = new TextComponent(messageComponent.create());
                 for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
                     if (onlinePlayer.hasPermission("dnotify.notify") && !PlayerData.get(onlinePlayer).getBoolean("disable-notifications")) {
-                        onlinePlayer.spigot().sendMessage(finalMessage, findRateComponent);
+                        onlinePlayer.spigot().sendMessage(new TextComponent(message.create()));
                     }
                 }
 
@@ -112,6 +101,10 @@ public class PlayerEvent implements Listener {
                 if (command != null && !command.equalsIgnoreCase("")) {
                     command = command.replace("%player%", player.getName());
                     Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
+                }
+
+                if (config.getBoolean("logger")) {
+                    Logger.write(findRate, player.getName(), diamondCount, block.getX(), block.getY(), block.getZ());
                 }
             }
 

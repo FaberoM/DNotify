@@ -2,7 +2,7 @@ package fi.fabianadrian.dnotify;
 
 import co.aikar.commands.PaperCommandManager;
 import fi.fabianadrian.dnotify.Commands.CmdDNotify;
-import fi.fabianadrian.dnotify.Files.Log;
+import fi.fabianadrian.dnotify.Files.Logger;
 import fi.fabianadrian.dnotify.Files.PlayerData;
 import org.bukkit.ChatColor;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -40,14 +40,13 @@ public class DNotify extends JavaPlugin {
         registerCommands();
 
         if (getConfig().getBoolean("logger")) {
-            Log.setup();
+            Logger.setup();
         }
 
         getServer().getPluginManager().registerEvents(new PlayerEvent(), this);
     }
 
     public void onDisable() {
-        plugin = null;
-        commandManager = null;
+        Logger.onDisable();
     }
 }
