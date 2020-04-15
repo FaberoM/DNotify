@@ -17,7 +17,9 @@ public class PlayerData {
     public static void setup() {
         //Create a folder for playerdata if it doesn't exist.
         if (!dataFolder.exists()) {
-            dataFolder.mkdirs();
+            if (dataFolder.mkdirs()) {
+                Logger.info("Created folder for playerdata");
+            }
         }
     }
 

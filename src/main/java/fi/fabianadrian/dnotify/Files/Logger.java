@@ -109,7 +109,7 @@ public class Logger {
             if (br.readLine() == null) {
                 br.close();
                 if (file.delete()) {
-                    info("Removing empty logfile.");
+                    info("Removing empty logfile");
                 }
             }
         } catch (IOException e) {
