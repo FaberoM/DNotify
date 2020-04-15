@@ -8,3 +8,6 @@ suspicious-command: ""
 
 # Should diamond finds be logged into a separate file as well?
 logger: true
+
+# Metrics (bStats.org)
+metrics: true

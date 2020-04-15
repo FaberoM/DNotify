@@ -4,6 +4,7 @@ import co.aikar.commands.PaperCommandManager;
 import fi.fabianadrian.dnotify.Commands.CmdDNotify;
 import fi.fabianadrian.dnotify.Files.Logger;
 import fi.fabianadrian.dnotify.Files.PlayerData;
+import org.bstats.bukkit.Metrics;
 import org.bukkit.ChatColor;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -37,13 +38,13 @@ public class DNotify extends JavaPlugin {
         saveDefaultConfig();
 
         PlayerData.setup();
+        Logger.setup();
+
         registerCommands();
 
-        if (getConfig().getBoolean("logger")) {
-            Logger.setup();
-        }
-
         getServer().getPluginManager().registerEvents(new PlayerEvent(), this);
+
+        if (getConfig().getBoolean("metrics")) new Metrics(this, 7160);
     }
 
     public void onDisable() {

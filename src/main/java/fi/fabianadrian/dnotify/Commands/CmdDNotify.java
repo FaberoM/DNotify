@@ -21,12 +21,11 @@ public class CmdDNotify extends BaseCommand {
 
     @HelpCommand
     public void onDefault(CommandIssuer issuer) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("&6Available commands:").append("\n")
-                .append("&f/dnotify version").append("\n")
-                .append("&f/dnotify toggle").append("\n")
-                .append("&f/dnotify reload");
-        issuer.sendMessage(DNotify.translate(sb.toString()));
+        String sb = "&6Available commands:" + "\n" +
+                "&f/dnotify version" + "\n" +
+                "&f/dnotify toggle" + "\n" +
+                "&f/dnotify reload";
+        issuer.sendMessage(DNotify.translate(sb));
     }
 
     @Subcommand("version")

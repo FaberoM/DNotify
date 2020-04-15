@@ -48,9 +48,10 @@ public class Logger {
     }
 
     public static void setup() {
-        try {
-            File[] logFiles = folder.listFiles();
 
+        //Compress any old logs that have not been compressed.
+        File[] logFiles = folder.listFiles();
+        try {
             if (logFiles != null) {
                 for (File logFile : logFiles) {
                     if (logFile.isFile() && getExtensionOfFile(logFile).equalsIgnoreCase("txt")) {
@@ -59,11 +60,17 @@ public class Logger {
                     }
                 }
             }
-
-            if (!folder.exists()) folder.mkdirs();
-            file.createNewFile();
         } catch (IOException e) {
-            severe("Couldn't create log.txt file!");
+            severe("Encountered an IOException while compressing old logs!");
+        }
+
+        if (DNotify.getPlugin().getConfig().getBoolean("logger")) {
+            try {
+                if (!folder.exists()) folder.mkdirs();
+                file.createNewFile();
+            } catch (IOException e) {
+                severe("Encountered an IOException while creating logfile!");
+            }
         }
     }
 
@@ -92,6 +99,11 @@ public class Logger {
     }
 
     public static void onDisable() {
+
+        if (!file.exists()) {
+            return;
+        }
+
         try {
             BufferedReader br = new BufferedReader(new FileReader(file));
             if (br.readLine() == null) {
