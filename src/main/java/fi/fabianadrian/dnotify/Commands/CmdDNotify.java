@@ -3,9 +3,13 @@ package fi.fabianadrian.dnotify.Commands;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.CommandIssuer;
 import co.aikar.commands.PaperCommandManager;
-import co.aikar.commands.annotation.*;
+import co.aikar.commands.annotation.CommandAlias;
+import co.aikar.commands.annotation.CommandPermission;
+import co.aikar.commands.annotation.Description;
+import co.aikar.commands.annotation.Subcommand;
 import co.aikar.locales.MessageKey;
 import fi.fabianadrian.dnotify.DNotify;
+import fi.fabianadrian.dnotify.Files.Logger;
 import fi.fabianadrian.dnotify.Files.PlayerData;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -18,15 +22,6 @@ public class CmdDNotify extends BaseCommand {
 
     private static final Plugin plugin = DNotify.getPlugin();
     private static final PaperCommandManager manager = DNotify.getCommandManager();
-
-    @HelpCommand
-    public void onDefault(CommandIssuer issuer) {
-        String sb = "&6Available commands:" + "\n" +
-                "&f/dnotify version" + "\n" +
-                "&f/dnotify toggle" + "\n" +
-                "&f/dnotify reload";
-        issuer.sendMessage(DNotify.translate(sb));
-    }
 
     @Subcommand("version")
     public void onVersion(CommandSender sender) {
@@ -47,6 +42,13 @@ public class CmdDNotify extends BaseCommand {
         } else {
             issuer.sendInfo(MessageKey.of("notificationsEnabled"));
         }
+    }
+
+    @Subcommand("purgelogs")
+    @CommandPermission("dnotify.purge")
+    public void onPurge(CommandIssuer issuer) {
+        Logger.purge();
+        issuer.sendInfo(MessageKey.of("purgingLogs"));
     }
 
     @Subcommand("reload")

@@ -108,7 +108,13 @@ public class PlayerEvent implements Listener {
                 }
             }
 
+            //Put player and nearby players to findmap
             lastFindLocation.put(player.getUniqueId(), block.getLocation());
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                if (p.getWorld() == player.getWorld() && p.getLocation().distanceSquared(player.getLocation()) <= 9 && p != player) {
+                    lastFindLocation.put(p.getUniqueId(), block.getLocation());
+                }
+            }
         }
     }
 

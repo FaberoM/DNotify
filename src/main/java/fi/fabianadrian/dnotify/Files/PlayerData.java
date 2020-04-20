@@ -36,13 +36,15 @@ public class PlayerData {
     }
 
     public static void set(UUID uuid, String key, Object value) {
-        FileConfiguration file = YamlConfiguration.loadConfiguration(dataFile(uuid));
-        file.set(key, value);
-        try {
-            file.save(dataFile(uuid));
-        } catch (IOException e) {
-            Bukkit.getLogger().severe("Couldn't save playerdata for player " + uuid);
-        }
+        Bukkit.getScheduler().runTaskAsynchronously(DNotify.getPlugin(), () -> {
+            FileConfiguration file = YamlConfiguration.loadConfiguration(dataFile(uuid));
+            file.set(key, value);
+            try {
+                file.save(dataFile(uuid));
+            } catch (IOException e) {
+                Bukkit.getLogger().severe("Couldn't save playerdata for player " + uuid);
+            }
+        });
     }
 
     private static File dataFile(UUID uuid) {

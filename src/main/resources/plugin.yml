@@ -1,5 +1,5 @@
 main: fi.fabianadrian.dnotify.DNotify
-version: 0.0.5
+version: 0.0.6
 name: DNotify
 author: Fabian Adrian
 api-version: "1.13"
