@@ -13,6 +13,7 @@ dnotify.notify - Get notified when a player finds diamonds
 dnotify.dnotify - Access /dnotify
 dnotify.toggle - Access /dnotify toggle
 dnotify.version - Access /dnotify version
+dnotify.purge - Access /dnotify purge
 ```
 
 
